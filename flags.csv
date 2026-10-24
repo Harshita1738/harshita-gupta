@@ -1,0 +1,10 @@
+station_id,channel,start_utc,end_utc,issue,action,note
+S01,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (3.7 hPa).
+S02,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (92.4 hPa).
+S03,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (111.0 hPa).
+S04,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (70.7 hPa).
+S05,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (88.8 hPa).
+S06,pressure_hpa,2025-03-01 00:00,2025-04-11 17:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (54.6 hPa).
+S07,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (110.6 hPa).
+S08,pressure_hpa,2025-03-01 00:00,2025-04-11 23:50,Abnormal station pressure baseline,correct,Pressure baseline deviates from expected elevation pressure (129.4 hPa).
+S08,all,2025-03-16 13:50,2025-03-18 01:40,Data gap exceeding 20 minutes,exclude,Logger offline or transmission failure.
