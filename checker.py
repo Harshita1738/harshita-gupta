@@ -2,8 +2,23 @@ import os
 import sys
 import pandas as pd
 
+def validate_nmea_checksum(sentence):
+    """Validates an NMEA sentence using its checksum."""
+    if not isinstance(sentence, str) or not sentence.startswith('$'):
+        return False
+    try:
+        body, checksum_str = sentence.strip().rsplit('*', 1)
+        expected_checksum = int(checksum_str, 16)
+        
+        calc_checksum = 0
+        for char in body[1:]:
+            calc_checksum ^= ord(char)
+            
+        return calc_checksum == expected_checksum
+    except Exception:
+        return False
+
 def main():
-    # sys.argv[0] is script name, the other is data folder path by user..
     if len(sys.argv) < 2:
         print("Usage: python checker.py <path_to_data_pack_folder>")
         sys.exit(1)
@@ -13,19 +28,23 @@ def main():
     # Paths
     stations_path = os.path.join(data_dir, 'stations.csv')
     data_folder = os.path.join(data_dir, 'data')
-    if not os.path.exists(data_folder):
+    gps_folder = os.path.join(data_dir, 'gps')
+
+    if not os.path.exists(data_folder) and not os.path.exists(gps_folder):
         # if the user passed the data folder directly instead of root pack
+        data_dir_parent = os.path.dirname(data_dir)
+        stations_path = os.path.join(data_dir_parent, 'stations.csv')
         data_folder = data_dir
-        stations_path = os.path.join(os.path.dirname(data_dir), 'stations.csv')
+        gps_folder = os.path.join(data_dir_parent, 'gps')
 
     flags = []
 
-    #load station's metadata
+    # Load station's metadata
     stations_df = None
     if os.path.exists(stations_path):
         stations_df = pd.read_csv(stations_path).set_index('station_id')
 
-    #Looping Through Station CSV Files
+    # 1. Looping Through Station CSV Files
     if os.path.exists(data_folder):
         for filename in os.listdir(data_folder):
             if filename.endswith('.csv') and filename.startswith('S'):
@@ -34,11 +53,9 @@ def main():
                 
                 df = pd.read_csv(file_path)
                 df['timestamp_utc'] = pd.to_datetime(df['timestamp_utc'])
-
                  
-                # Check 1: Stuck humidity (e.g. 100% for an extended period, like S05 in maintenance log)
+                # Check 1: Stuck humidity
                 if 'rh_pct' in df.columns:
-                    # Look for consecutive identical values lasting > 12 hours (72 intervals of 10 mins)
                     stuck = (df['rh_pct'] == df['rh_pct'].shift()).rolling(window=72).sum()
                     stuck_indices = df.index[stuck >= 71]
                     if len(stuck_indices) > 0:
@@ -57,7 +74,6 @@ def main():
                 # Check 2: Pressure sanity vs station elevation
                 if 'pressure_hpa' in df.columns and stations_df is not None and station_id in stations_df.index:
                     elev = stations_df.loc[station_id, 'elevation_m']
-                    # Rough expected station pressure formula based on elevation
                     expected_p = 1013.25 * (1 - 22.55e-5 * elev)**5.255
                     mean_p = df['pressure_hpa'].mean()
                     if abs(mean_p - expected_p) > 50:
@@ -88,24 +104,40 @@ def main():
                         'note': 'Logger offline or transmission failure.'
                     })
 
-                # Check 4: GPS NMEA Sentence Validation
-                if 'nmea_sentence' in df.columns:
-                    for idx, row in df.iterrows():
-                        sentence = row['nmea_sentence']
-                        if pd.notna(sentence):
-                            is_valid = validate_nmea_checksum(sentence)
-                            # Also check if it's an RMC sentence and has a 'V' (Void) fix
-                            is_void = '$GPRMC' in sentence and ',V,' in sentence
+    # 2. Looping Through GPS Log Files
+    if os.path.exists(gps_folder):
+        for filename in os.listdir(gps_folder):
+            if filename.endswith(('.txt', '.log', '.csv')):
+                station_id = filename.split('.')[0]
+                gps_path = os.path.join(gps_folder, filename)
+                
+                with open(gps_path, 'r') as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        
+                        # Example line format: 2025-03-01 00:00:00,$GPRMC,...
+                        parts_comma = line.split(',')
+                        timestamp_str = parts_comma[0] if len(parts_comma) > 0 else 'Unknown'
+                        
+                        # Extract the NMEA sentence part
+                        nmea_sentence = ','.join(parts_comma[1:]) if ',' in line else line
+                        
+                        if '$GPRMC' in nmea_sentence or '$GPGGA' in nmea_sentence:
+                            is_valid = validate_nmea_checksum(nmea_sentence)
+                            is_void = '$GPRMC' in nmea_sentence and len(parts_comma) > 3 and parts_comma[3] == 'V'
                             
                             if not is_valid or is_void:
+                                issue_desc = 'Invalid NMEA checksum' if not is_valid else 'GPS fix void (Status V)'
                                 flags.append({
                                     'station_id': station_id,
                                     'channel': 'gps_nmea',
-                                    'start_utc': row['timestamp_utc'].strftime('%Y-%m-%d %H:%M'),
-                                    'end_utc': row['timestamp_utc'].strftime('%Y-%m-%d %H:%M'),
-                                    'issue': 'Invalid NMEA checksum or GPS fix void',
+                                    'start_utc': timestamp_str,
+                                    'end_utc': timestamp_str,
+                                    'issue': issue_desc,
                                     'action': 'exclude',
-                                    'note': f'Corrupted or unverified NMEA packet: {sentence[:20]}...'
+                                    'note': f'Corrupted or unverified NMEA packet: {nmea_sentence[:30]}...'
                                 })
 
     # Write flags.csv to the current working directory
