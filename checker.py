@@ -88,6 +88,26 @@ def main():
                         'note': 'Logger offline or transmission failure.'
                     })
 
+                # Check 4: GPS NMEA Sentence Validation
+                if 'nmea_sentence' in df.columns:
+                    for idx, row in df.iterrows():
+                        sentence = row['nmea_sentence']
+                        if pd.notna(sentence):
+                            is_valid = validate_nmea_checksum(sentence)
+                            # Also check if it's an RMC sentence and has a 'V' (Void) fix
+                            is_void = '$GPRMC' in sentence and ',V,' in sentence
+                            
+                            if not is_valid or is_void:
+                                flags.append({
+                                    'station_id': station_id,
+                                    'channel': 'gps_nmea',
+                                    'start_utc': row['timestamp_utc'].strftime('%Y-%m-%d %H:%M'),
+                                    'end_utc': row['timestamp_utc'].strftime('%Y-%m-%d %H:%M'),
+                                    'issue': 'Invalid NMEA checksum or GPS fix void',
+                                    'action': 'exclude',
+                                    'note': f'Corrupted or unverified NMEA packet: {sentence[:20]}...'
+                                })
+
     # Write flags.csv to the current working directory
     flags_df = pd.DataFrame(flags)
     output_csv = 'flags.csv'
