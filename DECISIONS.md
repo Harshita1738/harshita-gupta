@@ -25,3 +25,26 @@ I also found a problem with GPS parsing. The earlier logic did not handle `.nmea
 I would improve the system by adding structured logs, automated tests, configurable thresholds, and a severity score to help the coordinator focus on the most important issues first. Repeated events could be grouped together to avoid unnecessary alerts, while cases with a high level of confidence or a potentially serious impact would be prioritised for review. I would also track how often flagged issues are confirmed or dismissed and use that feedback to fine-tune the thresholds over time.
 
 At the same time, I would be careful not to treat every unusual reading as an error. For example, a brief humidity flatline does not necessarily mean that the entire period should be excluded. I would also avoid automatically deleting or modifying historical climate data without clear evidence and a proper review process. Any changes should be traceable and allow a person to make the final decision.
+
+## 05 Roughly at what UTC time the sun is highest at station S04 on 20 March 2025.
+
+Earth in 24 hrs rotates 360 degree
+
+hence in 1 hr it rotates 360/24= 15 deg. 
+
+basically , 15 deg =1 hr time diff. Hence do => (longitude/15) to get time difference.
+
+ON 20 MARCH 2025, longitutde of S04 Station is -105.146 (from stations.csv)
+
+Formula to find solar noon (utc) is = 12:00 - (longitude/15).
+
+Here 12:00 is prime meridian. Negative longitude tells that its a western location.
+
+
+Solving:
+
+SOLAR NOON = 12:00 - (-105.146/15) = (12:00 + 7.0097)hrs => approx. is 12+7= 19:00 hrs
+
+final ans: 
+
+SOLAR NOON= 19:00 HRS.
