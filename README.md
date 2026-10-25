@@ -4,7 +4,7 @@
 [harshitawork208@gmail.com](mailto:harshitawork208@gmail.com)
 
 **Video:** [Add your 3-minute screen recording link]  
-**Run:** `python checker.py "path/to/data_pack"`
+**Run:** `python checker.py path/to/ridgeline_data_pack (2)`
 
 ## Overview
 
