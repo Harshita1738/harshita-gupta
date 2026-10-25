@@ -1,7 +1,7 @@
 station_id,channel,start_utc,end_utc,issue,action,note
-S06,all,2025-03-24 10:10,2025-03-24 16:00,Duplicate timestamps,review,36 distinct timestamps have duplicate records; review duplicated observations.
+S06,all,2025-03-24 10:10,2025-03-24 16:00,Duplicate timestamps,keep,36 distinct timestamps have duplicate records. Observations are preserved pending verification of identical or conflicting readings.
 S08,all,2025-03-16 13:50,2025-03-18 01:40,Data gap exceeding 20 minutes,exclude,Logger offline or transmission failure.
-S08,all,2025-04-05 00:00,2025-04-05 23:50,Duplicate timestamps,review,144 distinct timestamps have duplicate records; review duplicated observations.
+S08,all,2025-04-05 00:00,2025-04-05 23:50,Duplicate timestamps,keep,144 distinct timestamps have duplicate records. Observations are preserved pending verification of identical or conflicting readings.
 S01,gps_nmea,2025-03-01 16:00:01,2025-03-01 16:00:01,Invalid NMEA checksum,exclude,"Corrupted or unverified NMEA packet: $GPRMC,160000.00,A,3953.6732,N..."
 S01,gps_nmea,2025-03-06 01:00:01,2025-03-06 01:00:01,GPS fix void (Status V),exclude,"Corrupted or unverified NMEA packet: $GPRMC,010000.00,V,,,,,,,06032..."
 S01,gps_nmea,2025-03-07 13:00:00,2025-03-07 13:00:00,GPS fix void (Status V),exclude,"Corrupted or unverified NMEA packet: $GPRMC,130000.00,V,,,,,,,07032..."

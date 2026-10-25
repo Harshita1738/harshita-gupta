@@ -66,9 +66,7 @@ def main():
 
             # Check 1: Stuck humidity
             if 'rh_pct' in df.columns:
-                run_id = (
-                    df['rh_pct'].ne(df['rh_pct'].shift()).cumsum()
-                )
+                run_id = df['rh_pct'].ne(df['rh_pct'].shift()).cumsum()
 
                 for _, run in df.groupby(run_id):
                     if (
@@ -158,25 +156,56 @@ def main():
             ]
 
             if not duplicate_rows.empty:
-                duplicate_times = duplicate_rows['timestamp_utc']
+                # Print actual duplicated rows for verification
+                print(f"\nDuplicate timestamps in {station_id}:")
+                print(
+                    duplicate_rows.sort_values(
+                        'timestamp_utc'
+                    ).to_string(index=False)
+                )
 
-                # One grouped flag per affected station
-                flags.append({
-                    'station_id': station_id,
-                    'channel': 'all',
-                    'start_utc': duplicate_times.min().strftime(
-                        '%Y-%m-%d %H:%M'
-                    ),
-                    'end_utc': duplicate_times.max().strftime(
-                        '%Y-%m-%d %H:%M'
-                    ),
-                    'issue': 'Duplicate timestamps',
-                    'action': 'review',
-                    'note': (
-                        f'{duplicate_times.nunique()} distinct timestamps '
-                        'have duplicate records; review duplicated observations.'
-                    )
-                })
+                # Create one flag per consecutive group of duplicate times
+                duplicate_times = sorted(
+                    duplicate_rows['timestamp_utc'].unique()
+                )
+
+                groups = []
+                current_group = [duplicate_times[0]]
+
+                for timestamp in duplicate_times[1:]:
+                    if (
+                        timestamp - current_group[-1]
+                        <= pd.Timedelta(minutes=10)
+                    ):
+                        current_group.append(timestamp)
+                    else:
+                        groups.append(current_group)
+                        current_group = [timestamp]
+
+                groups.append(current_group)
+
+                for group in groups:
+                    group_start = group[0]
+                    group_end = group[-1]
+
+                    flags.append({
+                        'station_id': station_id,
+                        'channel': 'all',
+                        'start_utc': pd.Timestamp(group_start).strftime(
+                            '%Y-%m-%d %H:%M'
+                        ),
+                        'end_utc': pd.Timestamp(group_end).strftime(
+                            '%Y-%m-%d %H:%M'
+                        ),
+                        'issue': 'Duplicate timestamps',
+                        'action': 'keep',
+                        'note': (
+                            f'{len(group)} distinct timestamps have '
+                            'duplicate records. Observations are preserved '
+                            'pending verification of identical or conflicting '
+                            'readings.'
+                        )
+                    })
 
     # 2. Check GPS NMEA files
     if os.path.exists(gps_folder):
@@ -258,7 +287,7 @@ def main():
     output_csv = 'flags.csv'
     flags_df.to_csv(output_csv, index=False)
 
-    print(f"Successfully generated {output_csv} with {len(flags_df)} flags.")
+    print(f"\nSuccessfully generated {output_csv} with {len(flags_df)} flags.")
 
     if not flags_df.empty:
         print("\nFlags by issue:")
