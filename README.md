@@ -4,6 +4,7 @@
 [harshitawork208@gmail.com](mailto:harshitawork208@gmail.com)
 
 **Video:** [3-minute walkthrough](https://drive.google.com/file/d/1HB1CZplJAo-NvfqDN8t3Qz4EJeFKOkaa/view?usp=sharing)
+
 **Run:** `python checker.py path/to/ridgeline_data_pack (2)`
 
 ## Overview
